@@ -1,0 +1,146 @@
+/* ===========================================================
+   GLOBAL PAGE STYLING
+   =========================================================== */
+
+body {
+    height: 100%;
+    display: flex;
+    flex-direction: column;   /* top bar → panels → bottom bar */
+    background: #E6CCFF;
+    font-family: Arial, sans-serif;
+    color: black;
+    overflow: hidden;         /* Prevent scrollbars on full page */
+}
+
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;   /* ensures NO scrollbars anywhere */
+}
+
+
+/* ===========================================================
+   TOP BUTTON BAR
+   =========================================================== */
+
+#topBar {
+    background: purple;
+    height: 60px;              /* constant height */
+    padding: 10px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+
+#topBar, #bottomControls {
+    height: 60px;
+    flex-shrink: 0;     /* Don't let them collapse */
+}
+
+
+
+.rightBtn {
+    margin-left: auto;      /* Push Close button to the right */
+}
+
+/* ===========================================================
+   BUTTON STYLING
+   =========================================================== */
+
+button {
+    background: turquoise;
+    border: none;
+    padding: 8px 14px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background: yellow;
+}
+
+/* Disable button visual */
+button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* ===========================================================
+   MAIN LAYOUT (THREE PANELS)
+   =========================================================== */
+
+#container {
+    width: 99.6%;
+    flex: 1 1 auto;                /* allow it to grow and shrink */
+    min-height: 0;                 /* allow flexbox to allocate height correctly */
+    display: grid;
+    grid-template-columns: 42% 35% 23%;
+    gap: 10px;
+    padding: 5px;
+    margin-right: 50;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+
+.panel {
+    background: white;
+    padding: 15px;
+    border: 1px solid #dddddd;
+    border-radius: 6px;
+    overflow: hidden;      /* default: no scrollbars */
+}
+
+/* Only middle and right panels scroll */
+#container .panel:nth-child(2),
+#container .panel:nth-child(3) {
+    overflow-y: auto;
+}
+
+/* ===========================================================
+   GRAPH CANVAS
+   =========================================================== */
+
+#graphCanvas {
+    width: 99%;
+    height: 100%;
+    border: 2px solid rgb(84, 5, 88);
+    border-radius: 6px;
+    background: white;
+}
+
+/* ===========================================================
+   PRIM & FLOYD BUTTON AREAS
+   =========================================================== */
+
+#fwStartButtons,
+#primStartButtons {
+    margin-top: 20px;
+    display: none;
+}
+
+.fwStartBtn,
+.primBtn {
+    margin: 4px;
+}
+
+/* ===========================================================
+   BOTTOM PLAY/STEP CONTROL BAR
+   =========================================================== */
+
+#bottomControls {
+    background: purple;
+    height: 60px;            /* MAatched top bar height */
+    padding: 10px;
+    display: flex;
+    flex-shrink: 0;
+    justify-content: center;
+    gap: 20px;
+    align-items: center;     /* vertically center buttons */
+}
+
+

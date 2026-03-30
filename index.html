@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Graph Algorithms Visualiser</title>
+
+    <!-- Link external CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  
+
+<!-- ===================== TOP BUTTON BAR ===================== -->
+<div id="topBar">
+    <button id="runDijkstra">Dijkstra</button>
+    <button id="runKruskal">Kruskal</button>
+    <button id="runPrim">Prim</button>
+    <button id="runFW">Floyd–Warshall</button>
+
+    <!-- Close button on the right side -->
+    <button id="closeBtn" class="rightBtn">Close</button>
+</div>
+
+<!-- ===================== MAIN 3-PANEL LAYOUT ===================== -->
+<div id="container">
+
+    <!-- LEFT PANEL: Graph -->
+    <div class="panel">
+        <canvas id="graphCanvas"></canvas>
+    </div>
+
+    <!-- MIDDLE PANEL: Explanation + Algorithm‑Specific UI -->
+    <div class="panel">
+        <h3>Explanation</h3>
+        <div id="explain"></div>
+
+        <!-- Prim start-node buttons -->
+        <div id="primStartButtons"></div>
+
+        <!-- Floyd–Warshall matrices -->
+        <h3 id="fwMatricesTitle" style="display:none;">Floyd–Warshall Matrices</h3>
+        <div id="fwMatrices"></div>
+
+        <!-- Buttons for “paths from X” -->
+        <div id="fwStartButtons"></div>
+    </div>
+
+    <!-- RIGHT PANEL: Step output -->
+    <div class="panel">
+        <h3>Steps</h3>
+        <div id="steps"></div>
+    </div>
+
+</div>
+
+<!-- ===================== BOTTOM PLAY/STEP BAR ===================== -->
+<div id="bottomControls">
+    <button id="playBtn" disabled>Play</button>
+    <button id="stepBtn" disabled>Step</button>
+</div>
+
+<!-- Link external script -->
+<script src="script.js"></script>
+
+</body>
+</html>
