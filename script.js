@@ -27,6 +27,12 @@ const edges = {
 };
 
 let showFinalTree = false;
+let fwHighlightedEdges = new Map();
+
+const fwColours = ["red", "blue", "green", "orange", "purple", "brown"];
+let fwColourIndex = 0;
+
+
 
 /* ===========================================================
    CANVAS INITIALISATION
@@ -52,7 +58,7 @@ new ResizeObserver(() => {
    -----------------------------------------------------------
    highlightNode: node currently being visited
    highlightEdge: edge currently being examined
-   edgeColour:     colour for edge highlight
+   edgeColour:    colour for edge highlight
    =========================================================== */
    function drawGraph(highlightNode = null, highlightEdge = null, edgeColour = "yellow") {
 
@@ -78,6 +84,10 @@ new ResizeObserver(() => {
             width = 4;
         } else if (permanentlyHighlightedEdges.has(e)) {
             colour = "red";
+            width = 4;
+        } else if (typeof fwHighlightedEdges !== "undefined" &&
+            fwHighlightedEdges.has(e)) {
+            colour = fwHighlightedEdges.get(e);   // FW highlight colour  
             width = 4;
         }
 
@@ -229,6 +239,7 @@ function playSteps() {
 function resetGraphMemory() {
     permanentlyVisited.clear();
     permanentlyHighlightedEdges.clear();
+    fwHighlightedEdges.clear();
     drawGraph();
 }
 
@@ -739,11 +750,14 @@ function runFloydWarshall() {
     const fwArea = document.getElementById("fwStartButtons");
     fwArea.style.display = "block";
 
-    const colours = ["red", "blue", "green", "orange", "purple", "brown"];
-    let ci = 0;
+    // const colours = ["red", "blue", "green", "orange", "purple", "brown"];
+    // let ci = 0;
 
     for (let s of list) {
-        const colour = colours[ci++ % colours.length];
+        // const colour = colours[ci++ % colours.length];
+
+        const colour = fwColours[fwColourIndex++ % fwColours.length];
+
 
         const btn = document.createElement("button");
         btn.textContent = "Paths from " + s;
@@ -754,6 +768,17 @@ function runFloydWarshall() {
     }
 
     drawGraph();
+}
+
+/* ===========================================================
+   preparation for path highlighting
+   =========================================================== */
+
+function displayCoords(nodeName) {
+    let [x, y] = nodes[nodeName];
+    x -= 35;   // SAME OFFSET AS drawGraph()
+    y += 15;
+    return [x, y];
 }
 
 
@@ -769,6 +794,7 @@ function highlightFWPaths(start, dist, colour) {
     // ----------------------------------------------------------
     permanentlyVisited.clear();                 // remove old FW start node highlight
     permanentlyHighlightedEdges.clear();        // optional: keeps edges clean for FW mode
+    fwHighlightedEdges.clear();    
     drawGraph();                                // redraw clean base graph
 
 
@@ -791,23 +817,27 @@ function highlightFWPaths(start, dist, colour) {
             if (dist[start][a] + w + dist[b][end] === dist[start][end] ||
                 dist[start][b] + w + dist[a][end] === dist[start][end]) {
 
-                let [x1, y1] = nodes[a];
-                let [x2, y2] = nodes[b];
-                x1-=36;
-                y1+=15;
-                x2-=36;
-                y2+=15;
+                    fwHighlightedEdges.set(e, colour);
+                // let [x1, y1] = nodes[a];
+                // let [x2, y2] = nodes[b];
 
-                ctx.strokeStyle = colour;
-                ctx.lineWidth = 4;
+                // ctx.strokeStyle = colour;
+                // ctx.lineWidth = 4;
 
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();
+                // ctx.beginPath();
+       
+                // ctx.moveTo(x1, y1);
+                // ctx.lineTo(x2, y2);
+                // x1-=-36;
+                // y1+=15;
+                // x2-=-36;
+                // y2+=15;
+                // ctx.stroke();
             }
         }
     }
+
+    drawGraph(start, null, colour);
 }
 
 
