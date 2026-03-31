@@ -125,7 +125,6 @@ new ResizeObserver(() => {
         x -= 35;
         y += 15;
       
-
         ctx.beginPath();
         ctx.arc(x, y, 20, 0, Math.PI * 2);
 
@@ -143,12 +142,10 @@ new ResizeObserver(() => {
         ctx.lineWidth = 2;
         ctx.stroke();
         
-
         ctx.fillStyle = "black";
         ctx.fillText(n, x - 5, y + 5);
     }
 }
-
 
 
 /* ===========================================================
@@ -214,12 +211,12 @@ function doStep() {
         permanentlyHighlightedEdges.add(st.acceptEdge);
     }
 
-    /* NEW — temporary yellow highlight (Kruskal skip-step) */
+    /* Temporary yellow highlight (Kruskal skip-step) */
     if (st.tempHighlight) {
         tempHighlightedEdges.add(st.tempHighlight);
     }
 
-    /* NEW — remove temporary highlight */
+    /* Remove temporary highlight */
     if (st.removeTempHighlight) {
         tempHighlightedEdges.delete(st.removeTempHighlight);
     }
@@ -235,39 +232,13 @@ function doStep() {
 
     drawGraph(st.node, st.edge);
     stepIndex++;
+
+    
+  if (stepIndex >= activeSteps.length && showFinalTree) {
+        drawFinalDijkstraTree();   // Display final SPT
+  }
+
 }
-
-// function doStep() {
-   
-//     if (stepIndex >= activeSteps.length) return;
-
-//     const st = activeSteps[stepIndex];
-
-//     logStep("Step " + (stepIndex + 1));
-
-//     if (st.explain) {
-//         logExplain(st.explain);
-//     }
-
-//     if (st.node) {
-//         permanentlyVisited.add(st.node);
-//     }
-
-//     if (st.acceptEdge) {
-//         permanentlyHighlightedEdges.add(st.acceptEdge);
-//     }
-
-//     if (st.highlightNodes) {
-//         for (let n of st.highlightNodes) {
-//            permanentlyVisited.add(n);   // highlight the nodes
-//         }
-//     }
-
-//     drawGraph(st.node, st.edge);
-
-//     stepIndex++;
-
-// }
 
 
 function playSteps() {
@@ -295,7 +266,6 @@ function resetGraphMemory() {
 }
 
 
-
 // To ensure calculations work in both directions - e.g. A-C AND C-A
 function norm(u, v) {
     return u < v ? `${u}-${v}` : `${v}-${u}`;
@@ -321,7 +291,6 @@ function runDijkstra(startNode) {
     stepIndex = 0;
 
     logExplain("<b>Dijkstra Algorithm - Shortest Path Tree (from " + start + ")</b>");
-    // logExplain("<br>Finds the shortest distance from the start node to ALL other nodes.<br>");
     logExplain(`
             <br><b>What it finds:</b>
                The shortest route from one chosen start node to every other node.
@@ -477,8 +446,6 @@ function drawFinalDijkstraTree() {
    KRUSKAL’S MINIMUM SPANNING TREE (with temp skip highlights)
    =========================================================== */
 
-// let tempHighlightedEdges = new Set();
-
 function runKruskal() {
     showFinalTree = false;
 
@@ -529,8 +496,9 @@ function runKruskal() {
     const parent = {};
     Object.keys(nodes).forEach(n => parent[n] = n);
 
+    // If x is the root → return x.
     const find = x => parent[x] === x ? x : parent[x] = find(parent[x]);
-    const union = (a, b) => parent[find(a)] = find(b);
+    const union = (a, b) => parent[find(a)] = find(b); // Determine if the edge is already connected
 
     /* --------------------
        MAIN LOOP
@@ -608,12 +576,6 @@ function runPrim() {
                     Like building a utility network (e.g. electricity) as cheaply as possible overall.
 
 `)
-    // logExplain(`Prim determines the minimum total cost of the network, (not the shortest path) by:`)
-    // logExplain(`<b>choosing a starting node</b>, then attaching <b>a new edge</b> to a single, growing, tree at each step:<br>
-    //             Start with any node/vertex as a single-vertex tree <br>
-    //             <b>Add V-1 edges</b> (V=number of nodes, in this case 6) to it, by taking the <b>next minimum-weighted edge</b> that <b>connects a vertex on the tree to a vertex not yet in the tree</b>
-    //             Therefore, when the tree has V-1 edges, it is complete, in this case 5\n\n`);
-
 
     // Show start node buttons
     const area = document.getElementById("primStartButtons");
@@ -657,7 +619,6 @@ function primFrom(startNode) {
         let bestEdge = null;
         let bestWeight = Infinity;
 
-
         
         // Find smallest edge crossing visited → unvisited
         for (let e of allEdges) {
@@ -695,11 +656,9 @@ function primFrom(startNode) {
        explain: `<br><b>Total weight = ${totalWeight}</b>`
     });
 
-  
     enableAnimation();
     drawGraph();
 
-  
 }
 
 
@@ -716,7 +675,6 @@ function runFloydWarshall() {
 
     clearPanels();
     resetGraphMemory();
-    // logExplain("Scroll down for individual path from each node.");
 
     // Disable animation controls
     document.getElementById("playBtn").disabled = true;
@@ -727,8 +685,8 @@ function runFloydWarshall() {
     logExplain(`<b>What it finds:</b>
                    The shortest distances between <i>every</i> pair of nodes in the graph
                 <br><b>Key idea:
-                   Gradually improve the shortest path distances by examining each node (k) as a possible “middle point” on a route.</b>
-                   For every pair of nodes (i, j), it tests:
+                   Gradually improve the shortest path distances by examining each node (k) as a possible “middle point” on a route.
+                   </b>For every pair of nodes (i, j), it tests:
                        Is going from i → k → j shorter than the current best i → j distance?
                        If yes, update the matrix.
                    Repeating this for every k eventually reveals all the indirect routes which are better than the direct routes.
@@ -855,14 +813,9 @@ function runFloydWarshall() {
     const fwArea = document.getElementById("fwStartButtons");
     fwArea.style.display = "block";
 
-    // const colours = ["red", "blue", "green", "orange", "purple", "brown"];
-    // let ci = 0;
-
     for (let s of list) {
-        // const colour = colours[ci++ % colours.length];
 
         const colour = fwColours[fwColourIndex++ % fwColours.length];
-
 
         const btn = document.createElement("button");
         btn.textContent = "Paths from " + s;
@@ -923,21 +876,7 @@ function highlightFWPaths(start, dist, colour) {
                 dist[start][b] + w + dist[a][end] === dist[start][end]) {
 
                     fwHighlightedEdges.set(e, colour);
-                // let [x1, y1] = nodes[a];
-                // let [x2, y2] = nodes[b];
-
-                // ctx.strokeStyle = colour;
-                // ctx.lineWidth = 4;
-
-                // ctx.beginPath();
-       
-                // ctx.moveTo(x1, y1);
-                // ctx.lineTo(x2, y2);
-                // x1-=-36;
-                // y1+=15;
-                // x2-=-36;
-                // y2+=15;
-                // ctx.stroke();
+           
             }
         }
     }
@@ -956,6 +895,7 @@ function enableAnimation() {
 
     document.getElementById("playBtn").title="Play all seps automatically";
     document.getElementById("stepBtn").title="Step through each stage of the algorithm";
+
 }
 
 
@@ -989,5 +929,3 @@ document.getElementById("stepBtn").onclick = doStep;
    =========================================================== */
 
 drawGraph();
-
-
