@@ -721,6 +721,8 @@ function runFloydWarshall() {
     // Disable animation controls
     document.getElementById("playBtn").disabled = true;
     document.getElementById("stepBtn").disabled = true;
+    document.getElementById("playBtn").title="";
+    document.getElementById("stepBtn").title="";
 
     logExplain(`<b>What it finds:</b>
                    The shortest distances between <i>every</i> pair of nodes in the graph
