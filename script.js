@@ -951,6 +951,9 @@ function highlightFWPaths(start, dist, colour) {
 function enableAnimation() {
     document.getElementById("playBtn").disabled = false;
     document.getElementById("stepBtn").disabled = false;
+
+    document.getElementById("playBtn").title="Play all seps automatically";
+    document.getElementById("stepBtn").title="Step through each stage of the algorithm";
 }
 
 
