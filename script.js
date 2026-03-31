@@ -212,6 +212,12 @@ function doStep() {
         permanentlyHighlightedEdges.add(st.acceptEdge);
     }
 
+    if (st.highlightNodes) {
+        for (let n of st.highlightNodes) {
+           permanentlyVisited.add(n);   // highlight the nodes
+        }
+    }
+
     drawGraph(st.node, st.edge);
 
     stepIndex++;
