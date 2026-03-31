@@ -28,6 +28,7 @@ const edges = {
 
 let showFinalTree = false;
 let fwHighlightedEdges = new Map();
+let tempHighlightedEdges = new Set();
 
 const fwColours = ["red", "blue", "green", "orange", "purple", "brown"];
 let fwColourIndex = 0;
@@ -84,6 +85,9 @@ new ResizeObserver(() => {
             width = 4;
         } else if (permanentlyHighlightedEdges.has(e)) {
             colour = "red";
+            width = 4;
+        } else if (tempHighlightedEdges.has(e)) {
+            colour = "yellow";    // TEMP highlight
             width = 4;
         } else if (typeof fwHighlightedEdges !== "undefined" &&
             fwHighlightedEdges.has(e)) {
@@ -193,36 +197,77 @@ let stepIndex = 0;
 let playInterval = null;
 
 function doStep() {
-   
+
     if (stepIndex >= activeSteps.length) return;
 
     const st = activeSteps[stepIndex];
 
     logStep("Step " + (stepIndex + 1));
 
-    if (st.explain) {
-        logExplain(st.explain);
-    }
-
+    /* Node highlight */
     if (st.node) {
         permanentlyVisited.add(st.node);
     }
 
+    /* Permanent MST/SPT edge highlight */
     if (st.acceptEdge) {
         permanentlyHighlightedEdges.add(st.acceptEdge);
     }
 
+    /* NEW — temporary yellow highlight (Kruskal skip-step) */
+    if (st.tempHighlight) {
+        tempHighlightedEdges.add(st.tempHighlight);
+    }
+
+    /* NEW — remove temporary highlight */
+    if (st.removeTempHighlight) {
+        tempHighlightedEdges.delete(st.removeTempHighlight);
+    }
+
+    /* Node highlighting for Kruskal */
     if (st.highlightNodes) {
         for (let n of st.highlightNodes) {
-           permanentlyVisited.add(n);   // highlight the nodes
+            permanentlyVisited.add(n);
         }
     }
 
+    if (st.explain) logExplain(st.explain);
+
     drawGraph(st.node, st.edge);
-
     stepIndex++;
-
 }
+
+// function doStep() {
+   
+//     if (stepIndex >= activeSteps.length) return;
+
+//     const st = activeSteps[stepIndex];
+
+//     logStep("Step " + (stepIndex + 1));
+
+//     if (st.explain) {
+//         logExplain(st.explain);
+//     }
+
+//     if (st.node) {
+//         permanentlyVisited.add(st.node);
+//     }
+
+//     if (st.acceptEdge) {
+//         permanentlyHighlightedEdges.add(st.acceptEdge);
+//     }
+
+//     if (st.highlightNodes) {
+//         for (let n of st.highlightNodes) {
+//            permanentlyVisited.add(n);   // highlight the nodes
+//         }
+//     }
+
+//     drawGraph(st.node, st.edge);
+
+//     stepIndex++;
+
+// }
 
 
 function playSteps() {
@@ -231,7 +276,7 @@ function playSteps() {
         if (stepIndex >= activeSteps.length) {
             clearInterval(playInterval);
             if (showFinalTree) {
-               drawFinalTree(); 
+               drawFinalDijkstraTree();
             }
         }
         doStep();
@@ -250,12 +295,20 @@ function resetGraphMemory() {
 }
 
 
+
 // To ensure calculations work in both directions - e.g. A-C AND C-A
 function norm(u, v) {
     return u < v ? `${u}-${v}` : `${v}-${u}`;
 }
 
-let finalPrev = {};   // store final parent tree
+
+/* ===========================================================
+   DIJKSTRA — step-by-step + final SPT redraw
+   =========================================================== */
+
+let finalPrev = {};   // store Dijkstra parent tree
+let finalDist = {};   // store final Dijkstra distances
+
 function runDijkstra(startNode) {
     const start = startNode;
     showFinalTree = true;
@@ -267,12 +320,26 @@ function runDijkstra(startNode) {
     activeSteps = [];
     stepIndex = 0;
 
-    document.getElementById("steps").innerHTML = "";  
+    logExplain("<b>Dijkstra Algorithm - Shortest Path Tree (from " + start + ")</b>");
+    // logExplain("<br>Finds the shortest distance from the start node to ALL other nodes.<br>");
+    logExplain(`
+            <br><b>What it finds:</b>
+               The shortest route from one chosen start node to every other node.
+            <br><b>Key idea:
+               It grows outward from the start node, always choosing the closest unvisited node next.
+               It produces a Shortest Path Tree (SPT) —
+                 a branching structure where each node has the cheapest route from the start only.
+            <br>Optimises:</b>
+               Distance from the start node
+            <br><b>Depends on starting node?</b>
+                Yes — changing the start changes the entire tree
+            <br><b>Analogy:</b>
+               Like planning a road network from your house to reach all other towns as cheaply as possible individually.<br>
+`)
 
-    logExplain("<b>Dijkstra Algorithm (from A)</b>");
-    logExplain("<br>Uses the weights of the edges to find the path that minimises the total distance (weight) between the source node and all other nodes<br>")
-
-
+    /* -------------------------
+       Build adjacency list
+       ------------------------- */
     const adjacency = {};
     for (const key in edges) {
         const [u, v] = key.split("-");
@@ -285,6 +352,9 @@ function runDijkstra(startNode) {
         adjacency[v].push({ node: u, weight: w });
     }
 
+    /* -------------------------
+       Initialise tables
+       ------------------------- */
     const dist = {};
     const prev = {};
     const visited = new Set();
@@ -295,6 +365,9 @@ function runDijkstra(startNode) {
     }
     dist[start] = 0;
 
+    /* -------------------------
+       Extract minimum helper
+       ------------------------- */
     function extractMin() {
         let best = null;
         let bestDist = Infinity;
@@ -307,7 +380,9 @@ function runDijkstra(startNode) {
         return best;
     }
 
-    // MAIN LOOP
+    /* -------------------------
+       MAIN LOOP (step-by-step)
+       ------------------------- */
     while (true) {
         const current = extractMin();
         if (!current) break;
@@ -317,7 +392,7 @@ function runDijkstra(startNode) {
         activeSteps.push({
             node: current,
             edge: null,
-            explain: `Visiting ${current} — closest unvisited node (distance = ${dist[current]}).`
+            explain: `Visiting <b>${current}</b> — closest unvisited node (distance = ${dist[current]}).`
         });
 
         for (const adj of adjacency[current]) {
@@ -332,15 +407,13 @@ function runDijkstra(startNode) {
 
                 const edge = norm(current, nbr);
 
-                const explanation =
-                    `Considering edge ${edge} (weight ${w}).<br>
-                     New distance = ${newDist} < old = ${dist[nbr]}.<br>
-                     Selecting this edge.`;
-
                 activeSteps.push({
                     node: nbr,
                     edge,
-                    explain: explanation
+                    explain:
+                        `Considering edge ${edge} (weight ${w}).<br>
+                         New distance = ${newDist}, old = ${dist[nbr]}.<br>
+                         Updating path to ${nbr}.`
                 });
 
                 dist[nbr] = newDist;
@@ -349,46 +422,37 @@ function runDijkstra(startNode) {
         }
     }
 
-    
+    /* Save final parent + distance tables */
     finalPrev = { ...prev };
+    finalDist = { ...dist };
 
-    
-    activeSteps.push({
-        explain: "<h3>FINAL TREE</h3>"
-    });
-
-
-
-    // FINAL TREE EDGES
-    for (const node in prev) {
-          const parent = prev[node];
-
-          if (!parent) continue;
-
-              const edge = norm(parent, node);
-
-              activeSteps.push({
-                 node: node,
-                 edge: edge,
-                 acceptEdge: edge,
-                 explain: `Final tree edge: ${edge} (weight ${edges[edge]})`
-              });
-    }
- 
-    drawGraph();
+    /* Animation ends → final SPT will be shown by drawFinalDijkstraTree() */
     return { dist, prev };
 }
 
 
-function drawFinalTree() {
+/* ===========================================================
+   DRAW FINAL DIJKSTRA SPT (clean redraw)
+   =========================================================== */
+
+function drawFinalDijkstraTree() {
 
     permanentlyHighlightedEdges.clear();
     permanentlyVisited.clear();
+    fwHighlightedEdges.clear();
+
+    logExplain("<h3>Final Shortest-Path Tree</h3>");
 
     let totalWeight = 0;
 
-    // rebuild final edges from finalPrev
-    for (const node in finalPrev) {
+    /* ------------------------------------------------------
+       Sort nodes by final distance so SPT prints correctly
+       ------------------------------------------------------ */
+    const sortedNodes = Object.keys(finalPrev)
+        .filter(n => finalPrev[n] !== null)
+        .sort((a, b) => finalDist[a] - finalDist[b]);
+
+    for (const node of sortedNodes) {
         const parent = finalPrev[node];
         if (!parent) continue;
 
@@ -399,121 +463,118 @@ function drawFinalTree() {
         permanentlyVisited.add(parent);
 
         totalWeight += edges[edge];
+
+        logExplain(`Tree edge: <b>${edge}</b> (weight ${edges[edge]})`);
     }
 
-    drawGraph(); // redraw with only final tree highlights
+    logExplain(`<br><b>Total SPT Weight = ${totalWeight}</b><br>`);
 
-    logExplain(`<b>Final Tree Weight = ${totalWeight}</b><br>`);
-
-    logExplain(`<b>Why is this higher than Kruskal or Prim?</b><br>`);
-    logExplain(`Because Dijkstra <b>has to follow a path</b>, whereas Kruksal and Prim select <b>the cheapest - anywhere</b>. e.g.`);
-    logExplain(`C-E, Kruksal and Prim select C-E directly = 1, however, Dijkstra (from A) has to follow the path i.e. A-C-E = 6  <br>`);
+    drawGraph();
 }
 
 
 /* ===========================================================
-   KRUSKAL’S MINIMUM SPANNING TREE
+   KRUSKAL’S MINIMUM SPANNING TREE (with temp skip highlights)
    =========================================================== */
+
+// let tempHighlightedEdges = new Set();
+
 function runKruskal() {
     showFinalTree = false;
 
     clearPanels();
     resetGraphMemory();
+    enableAnimation();
 
     activeSteps = [];
     stepIndex = 0;
 
-    totalWeight = 0
-   
+    totalWeight = 0;
 
     logExplain("<b>Kruskal's Algorithm</b><br>");
-    logExplain(`<br> <b>1. </b>
-                Sort the edges in terms of increasing weight<br>
+    logExplain(`<b>What it finds:</b>
+                  The same thing as Prim — a Minimum Spanning Tree.
+                  The tree that connects all nodes with the smallest possible total cost.
+                <br><b>Key idea:
+                   Sort all edges by weight and add them one by one, skipping any edge that would cause a cycle.
+                <br>What the result looks like:</b>
+                     A Minimum Spanning Tree (MST) —
+                       the cheapest possible full network structure.
+                <br><b>Optimises:</b>
+                   <i>Total</i> tree weight
+                <br><b>Depends on starting node?</b>
+                   No — Kruskal ignores starting nodes.
+                <br><b>Analogy:</b>
+                   Like choosing cables for a network by sorting all prices and buying the cheapest that doesn’t cause problems.<br><br>
 
-            <b>2. </b>  
-                Select the edge of least weight<br>
-                 If there is more than one edge of the same weight, either may be used<br>
+`)
 
-            <b>3. </b>
-                Select the next edge of least weight that has not already been chosen.  
-
-                Reject it if it forms a cycle with the other selected edges
-
-                Otherwise, add it to your tree<br>
-
-            <b>4. </b>
-
-                Repeat 3. above until all of the vertices in the graph are connected
-
-                If there are n nodes then there will be n - 1 edges in the minimum spanning tree<br>
-
-            <b>5. </b>
-                List the edges in the minimum spanning tree in the order they were added <br><br>`);
-
-
-    // ----------------------------------------------------------
-    // SORT THE EDGES — Used for BOTH display and algorithm
-    // ----------------------------------------------------------
+    /* --------------------
+       Sort edges by weight
+       -------------------- */
     const sorted = Object.keys(edges)
         .map(e => ({ edge: e, w: edges[e] }))
-        .sort((a, b) => a.w - b.w);   // ascending numeric sort
+        .sort((a, b) => a.w - b.w);
 
-    // ----------------------------------------------------------
-    // STEP 1 — Display sorted edges in middle panel
-    // ----------------------------------------------------------
     let sortedListHTML = "";
     sorted.forEach(item => {
         sortedListHTML += `${item.edge} (weight ${item.w})<br>`;
     });
 
-    logExplain("<b>Sorted edges (ascending by weight):</b><br>" + sortedListHTML + "<br>");
-    
+    logExplain("<b>Sorted edges:</b><br>" + sortedListHTML + "<br>");
 
-    // ----------------------------------------------------------
-    // KRUSKAL MST CONSTRUCTION
-    // ----------------------------------------------------------
+    /* --------------------
+       Union-Find
+       -------------------- */
     const parent = {};
     Object.keys(nodes).forEach(n => parent[n] = n);
 
     const find = x => parent[x] === x ? x : parent[x] = find(parent[x]);
     const union = (a, b) => parent[find(a)] = find(b);
 
-
-    // For each edge in sorted order
+    /* --------------------
+       MAIN LOOP
+       -------------------- */
     for (let { edge, w } of sorted) {
 
         let [a, b] = edge.split("-");
 
-        if (find(a) !== find(b)) {
-            // Accept this edge into MST
-            union(a, b);
+        /* STEP 1 — highlight yellow */
+        activeSteps.push({
+            tempHighlight: edge,
+            explain: `Considering edge <b>${edge}</b> (weight ${w})...`
+        });
 
+        /* Check for cycle */
+        if (find(a) !== find(b)) {
+
+            /* STEP 2 — remove yellow + accept edge */
             activeSteps.push({
-                edge,
+                removeTempHighlight: edge,
                 acceptEdge: edge,
-                highlightNodes: [a, b],    // highlight both nodes
-                explain: `Adding edge ${edge} (weight ${w}) to MST.`
+                highlightNodes: [a, b],
+                explain: `Adding <b>${edge}</b> to MST.`
             });
 
+            union(a, b);
             totalWeight += w;
 
         } else {
 
+            /* STEP 2 — remove yellow + skip edge */
             activeSteps.push({
-                explain: `Skipping ${edge} (would form a cycle).`
+                removeTempHighlight: edge,
+                explain: `${edge} <b>skipped</b> — would form a cycle.`
             });
         }
     }
 
     activeSteps.push({
-       explain: `<br><b>Total weight = ${totalWeight}</b>`
+        explain: `<br><b>Total Weight = ${totalWeight}</b>`
     });
 
-    // Enable animation
-    enableAnimation();
     drawGraph();
 }
-
 
 
 /* ===========================================================
@@ -529,12 +590,29 @@ function runPrim() {
     activeSteps = [];
     stepIndex = 0;
 
-    logExplain("<b>Prim's Algorithm</b>:");
-    logExplain(`Prim determines the minimum total cost of the network, (not the shortest path) by:`)
-    logExplain(`<b>choosing a starting node</b>, then attaching <b>a new edge</b> to a single, growing, tree at each step:<br>
-                Start with any node/vertex as a single-vertex tree <br>
-                <b>Add V-1 edges</b> (V=number of nodes, in this case 6) to it, by taking the <b>next minimum-weighted edge</b> that <b>connects a vertex on the tree to a vertex not yet in the tree</b>
-                Therefore, when the tree has V-1 edges, it is complete, in this case 5\n\n`);
+    logExplain("<b>Prim's Algorithm - Minimum Spanning Tree</b>:");
+    logExplain (`<br><b>What it finds:</b>
+                   The same thing as Kruksal — a Minimum Spanning Tree.
+                   The tree that connects all nodes with the smallest possible total cost.
+                <br><b>Key idea:
+                   Start anywhere, then always take the cheapest edge that connects the growing tree to a new node.
+                <br>What the result looks like:</b>
+                   A Minimum Spanning Tree (MST) —
+                     a cheapest possible full network structure.
+                <br><b>Optimises:</b>
+                    <i>Total</i> weight of the entire tree<br>
+                    Distance from any specific start node
+                <br><b>Depends on starting node?</b>
+                    NO — the final MST is the same regardless of where you start (except when there are ties).
+                <br><b>Analogy:</b>
+                    Like building a utility network (e.g. electricity) as cheaply as possible overall.
+
+`)
+    // logExplain(`Prim determines the minimum total cost of the network, (not the shortest path) by:`)
+    // logExplain(`<b>choosing a starting node</b>, then attaching <b>a new edge</b> to a single, growing, tree at each step:<br>
+    //             Start with any node/vertex as a single-vertex tree <br>
+    //             <b>Add V-1 edges</b> (V=number of nodes, in this case 6) to it, by taking the <b>next minimum-weighted edge</b> that <b>connects a vertex on the tree to a vertex not yet in the tree</b>
+    //             Therefore, when the tree has V-1 edges, it is complete, in this case 5\n\n`);
 
 
     // Show start node buttons
@@ -638,11 +716,30 @@ function runFloydWarshall() {
 
     clearPanels();
     resetGraphMemory();
-    logExplain("Scroll down for individual path from each node.");
+    // logExplain("Scroll down for individual path from each node.");
 
     // Disable animation controls
     document.getElementById("playBtn").disabled = true;
     document.getElementById("stepBtn").disabled = true;
+
+    logExplain(`<b>What it finds:</b>
+                   The shortest distances between <i>every</i> pair of nodes in the graph
+                <br><b>Key idea:
+                   Gradually improve the shortest path distances by examining each node (k) as a possible “middle point” on a route.</b>
+                   For every pair of nodes (i, j), it tests:
+                       Is going from i → k → j shorter than the current best i → j distance?
+                       If yes, update the matrix.
+                   Repeating this for every k eventually reveals all the indirect routes which are better than the direct routes.
+                <br><b>What the result looks like</b>
+                     A complete matrix of shortest distances between every pair
+                <br><b>(Optionally) a map of all shortest paths</b>
+                     It does not produce a single tree - it produces many possible trees depending on the starting node
+                <br><b>Optimises</b>
+                     Shortest distance between <i>every</i> pair of nodes
+                <br><b>Depends on starting node?</b>
+                      No - The algorithm computes <i>all pairs</i> shortest paths in one run.
+                 <br>If the user later wants paths “from A” or “from B”, they are simply extracted from the result matrix - the algorithm itself does not run again.
+`)
 
     // Tell user why animations have been disabled
     logStep("Floyd–Warshall is a matrix-based algorithm, therefore step-by-step graph animation is not meaningful.\n\n");
