@@ -13,10 +13,31 @@
 
 <!-- ===================== TOP BUTTON BAR ===================== -->
 <div id="topBar">
-    <button id="runDijkstra">Dijkstra</button>
-    <button id="runKruskal">Kruskal</button>
-    <button id="runPrim">Prim</button>
-    <button id="runFW">Floyd–Warshall</button>
+    <button id="runDijkstra" class="algoBtn" title="Imagine you have a map of all cities linked by roads of different lengths.
+        Dijkstra answers:
+            What are the shortest ways to travel starting from my home?">
+        Dijkstra
+    </button>
+
+    <button id="runKruskal" class="algoBtn" title="Imagine you have a map of all cities linked by roads of different lengths.
+        Kruskal answers:
+            How do I connect all cities together as cheaply as possible? (Same as Prim)">
+        Kruskal
+    </button>
+
+    <button id="runPrim" class="algoBtn" title="Imagine you have a map of all cities linked by roads of different lengths.
+        Prim answers:
+            How do I connect all cities together as cheaply as possible? (Same as Kruksal)">
+        Prim
+    </button>
+
+    <button id="runFW" class="algoBtn" title="Imagine you have a map of all cities linked by roads of different lengths.
+        Floyd-Warshall answers:
+            What is the shortest way to travel between every pair of cities - no matter where I start, or where I end up">
+        Floyd-Warshall
+    </button>
+
+    <h4 style="color:white;">Hover over each button on the left for a brief analogy.  Click for a full explanation and demonstration</h4>
 
     <!-- Close button on the right side -->
     <button id="closeBtn" class="rightBtn">Close</button>
@@ -56,8 +77,11 @@
 
 <!-- ===================== BOTTOM PLAY/STEP BAR ===================== -->
 <div id="bottomControls">
-    <button id="playBtn" disabled>Play</button>
-    <button id="stepBtn" disabled>Step</button>
+
+    <button id="playBtn" title="" disabled>Play</button>
+    <button id="stepBtn" title="" disabled>Step</button>
+
+</button>
 </div>
 
 <!-- Link external script -->
